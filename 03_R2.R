@@ -10,8 +10,10 @@
 
 # the choice of the three r-squared measures is strategic:
 # ... 1) Efron's r-squared is most similar to R-squared in ordinary least squares; and 
-# ... 2) Paul Allison demonstrates McFadden's and Tjur's r-squared statictics > other pseduo r-squared measures;
+# ... 2) Paul Allison demonstrates McFadden's and Tjur's r-squared statictics > other pseduo r-squared measures;*
 # ... 3) the three measures sufficiently differ in their procedures to calculate r-squared
+
+# ... * see Paul Allison's comparison of pseudo R-squared measures: https://statisticalhorizons.com/r2logistic/
 
 
 
@@ -19,8 +21,7 @@
 Efron <- function(null, update, adjust){
   # adjacency graph to pairwise dyads
   ij <- igraph::as_edgelist(intergraph::asIgraph(phone), names = TRUE) # pairwise dyads
-  ij <- data.frame(ij)             # dataset 
-  ij <- dplyr::mutate(ij, n = 1)   # = 1 to denote police-reported dyads
+  ij <- data.frame(ij); ij <- dplyr::mutate(ij, n = 1) # = 1 to denote police-reported dyads
   colnames(ij) <- c("i", "j", "n") # rename columns
   
   # predicted probabilities
@@ -39,7 +40,7 @@ Efron <- function(null, update, adjust){
   
   # isolate-adjusted graph density used in r-squared calculation
   b <- coefficients(null)[1] # edge parameter of the isolate-adjust graph
-  mu <- exp(b)/(1+exp(b))    # predicted probability = graph density
+  mu <- exp(b)/(1+exp(b))    # predicted probability of the edge parameter = graph density
   
   # join the pairwise dyads to the predicted probabilities
   pp_update <- merge(x = pp_update, y = ij, by.x = c("i", "j"), by.y = c("i", "j"), all.x = TRUE, all.y = TRUE)
@@ -99,10 +100,8 @@ McFadden(null = ergm_00, update = ergm_02, adjust = adj)
 # Tjur's R-squared -------------------------------------------------------------
 Tjur <- function(update, adjust){
   # adjacency graph to pairwise dyads
-  ij <- intergraph::asIgraph(phone) 
-  ij <- igraph::as_edgelist(ij, names = TRUE)
-  ij <- data.frame(ij)             # dataset 
-  ij <- dplyr::mutate(ij, n = 1)   # = 1 to denote police-reported dyads
+  ij <- igraph::as_edgelist(intergraph::asIgraph(phone), names = TRUE) # pairwise dyads
+  ij <- data.frame(ij); ij <- dplyr::mutate(ij, n = 1) # = 1 to denote police-reported dyads
   colnames(ij) <- c("i", "j", "n") # rename columns
   
   # predicted probabilities
@@ -123,8 +122,8 @@ Tjur <- function(update, adjust){
   pp_update <- merge(x = pp_update, y = ij, by.x = c("i", "j"), by.y = c("i", "j"), all.x = TRUE, all.y = TRUE)
   pp_update[is.na(pp_update)] <- 0 # set non-dyads = 0
   # calculate r-squared
-  y_1  <- exp(mean(log(pp_update$p[pp_update$n == 1])))
-  y_0  <- exp(mean(log(pp_update$p[pp_update$n == 0])))
+  y_1  <- exp(mean(log(pp_update$p[pp_update$n == 1]))) # geometric means
+  y_0  <- exp(mean(log(pp_update$p[pp_update$n == 0]))) # geometric means
   r.sq <- abs(y_0 - y_1)
   # print Tjur's r-squared
   cat("\n Tjur's R-squared: "); cat(r.sq); cat("\n")
@@ -133,8 +132,8 @@ Tjur <- function(update, adjust){
   pp_adjust <- merge(x = pp_adjust, y = ij, by.x = c("i", "j"), by.y = c("i", "j"), all.x = TRUE, all.y = TRUE)
   pp_adjust[is.na(pp_adjust)] <- 0 # set non-dyads = 0
   # calculate r-squared adjustment
-  y_1  <- exp(mean(log(pp_adjust$p[pp_adjust$n == 1])))
-  y_0  <- exp(mean(log(pp_adjust$p[pp_adjust$n == 0])))
+  y_1  <- exp(mean(log(pp_adjust$p[pp_adjust$n == 1]))) # geometric means
+  y_0  <- exp(mean(log(pp_adjust$p[pp_adjust$n == 0]))) # geometric means
   r.dx <- abs(y_0 - y_1)
   r.dx <- r.sq - r.dx # "adjusted" r.squared
   # print adjustment

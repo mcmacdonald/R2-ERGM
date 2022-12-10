@@ -1,6 +1,8 @@
 
 
 
+
+
 # This .r script predicts graph-theoretic properties of the mafia phone calls ...
 
 # contents: three functions calculate the null, updated, and adjusted statistics ...
@@ -9,8 +11,35 @@
 
 
 # ------------------------------------------------------------------------------
-# this code calculates the isolate-adjusted density of the graph ...
+# this code calculates the graph density, plus other null statistics used to calculate r-squared
 null <- function(){ # ... this code provides null estimates used to calculate r-squared measures
+  n <- nrow(v)     # vertex count
+  k <- n * 100000  # 100,000 iterations per vertex
+  b <- ergm::ergm( # equation
+    phone ~  # predict graph properties of phone calls
+      edges, # graph density i.e., equivalent to the intercept 
+    # modelling specification
+    estimate = 'MPLE',
+    control = control.ergm(
+      main.method = 'MCMLE', # see Snijders & van Duijn (2002) regarding 'Robbins-Monro' method
+      MCMC.burnin = k,   # 'more is better' ... = v x 100,000
+      MCMC.interval = k, # 'more is better' ... = v x 100,000
+      MCMC.prop.weights = 'TNT', # faster convergence when paired with 'MPLE'
+      seed = 20110210 # to replicate ERGM
+    ),
+    verbose = TRUE # adjustment for low density adjacency graphs
+  )
+  print(summary(b))  # print results
+  print(confint(b, level = 0.95)) # 95% range
+  return(b) # return ergm object
+}
+null_00 <- null()
+
+
+
+# ------------------------------------------------------------------------------
+# this code calculates the isolate-adjusted density of the graph, plus other isolate-adjusted statistics used to calcualte r-squared
+adjustment_isolate <- function(){ # ... this code provides isolate-adjusted estimates used to calculate r-squared measures
   n <- nrow(v)     # vertex count
   k <- n * 100000  # 100,000 iterations per vertex
   b <- ergm::ergm( # equation
@@ -32,7 +61,7 @@ null <- function(){ # ... this code provides null estimates used to calculate r-
   print(confint(b, level = 0.95)) # 95% range
   return(b) # return ergm object
 }
-ergm_00 <- null() # isolate-adjusted density of the graph
+ergm_00 <- adjustment_isolate() # isolate-adjusted density of the graph
 
 
 
@@ -67,6 +96,8 @@ update <- function(x){ # ... this code provides the updated estimates used to ca
   print(confint(b, level = 0.95)) # 95% range
   return(b) # return ergm object
 }
+# this command weights the degree distribution according to 'x' ...
+# ... larger x places more weight on vertices in the upper-tail of the degree distribution
 ergm_01 <- update(x = 0.5)
 ergm_02 <- update(x = 1.0)
 ergm_03 <- update(x = 1.5)
@@ -76,6 +107,7 @@ ergm_05 <- update(x = 2.5)
 
 
 # goodnes-of-fit tests ---------------------------------------------------------
+# compare the graph-theoretic properties by the geometric weight of the degree distribution
 GOF = function(y){
   n <- nrow(v)     # n vertex
   k <- n * 100000  # 100,000 iterations per vertex
@@ -101,10 +133,11 @@ gof_04 = GOF(ergm_04)
 gof_05 = GOF(ergm_05)
 
 # plot goodness-of-fit statistics
-GOF_plot <- function(gof){
+GOF_plot <- function(y){
+  # par(mar=c(1,1,1,1))
   par( mfrow = c(2, 2) ) # set plot dimensions
   plot(
-    gof,
+    y,
     plotlogodds = TRUE, # y-axis scale
     normalize.reacability = TRUE,
     main = "ERGM GOF diagnostics", # plot title
@@ -122,7 +155,7 @@ GOF_plot(gof_05)
 # ------------------------------------------------------------------------------
 # this code is used to adjust r-squared statistics
 # ... it uses only endogenous graph properties to predict the graph-theoretic properties of mafia phone calls
-adjustment <- function(){ # ... this code provides the adjustments used to calculate r-squared measures
+adjustment_ergm <- function(){ # ... this code provides the adjustments used to calculate r-squared measures
   n <- nrow(v)     # vertex
   k <- n * 100000  # 100,000 iterations per vertex
   b <- ergm::ergm( # equation
@@ -147,7 +180,7 @@ adjustment <- function(){ # ... this code provides the adjustments used to calcu
   print(confint(b, level = 0.95)) # 95% range
   return(b) # return ergm object
 }
-adj <- adjustment()
+adj <- adjustment_ergm()
 
 
 

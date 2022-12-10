@@ -1,0 +1,9 @@
+Folder contents contain surveillance on mafia phone calls and meet co-participation originally collected by Lucia Cavallaro and others (2020). The original data is available on Cavallaro's GitHub repository: https://github.com/lcucav/criminal-nets/tree/master/disruption
+
+I manually coded the attributes according to the graphs presented in Ficara et al. (2019).
+
+REFERENCES:
+
+A. Ficara et al. 2019. Social network analysis of Sicilian Mafia interconnections. In International Conference on Complex Networks and Their Applications (pp. 440-450). Springer, Cham.
+
+L. Cavallaro et al. 2020. Disrupting resilient criminal networks through data analysis: The case of Sicilian Mafia. Plos one, 15(8): e0236476.

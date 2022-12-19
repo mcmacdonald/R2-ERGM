@@ -19,3 +19,7 @@ N145,N13,mother-son
 N13,N145,son-mother
 N148,N149,wife-husband
 N149,N148,husband-wife
+N56, N150, wife-husband
+N150, N56, husband-wife
+N57, N150, daughter-father
+150, N57, father-daughter

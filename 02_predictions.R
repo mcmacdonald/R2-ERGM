@@ -187,3 +187,36 @@ adj <- adjustment_ergm()
 # close .r script --------------------------------------------------------------
 
 
+
+# logistic regression by quadratic assignment procedure ------------------------
+# ... this code uses attributes to predicts edges, but does not include non-linear endogenous graph properties
+LRQAP <- function(){
+  n <- nrow(v)     # vertex
+  k <- n * 100000  # 100,000 iterations per vertex
+  b <- ergm::ergm( # equation
+    phone ~                               # predict graph-properties of phone taps
+      edges                             + # graph density or intercept 
+      isolates                          + # control on isolates i.e., degree = 0
+      nodefactor('mob', levels = -1)    +
+      #nodefactor('title', levels = -1) +     
+      nodematch('title', diff = FALSE)  + # similarities in title i.e., associates connect to associates
+      edgecov(meets) * edgecov(mobs)    , # interaction effect meetings x criminal organization membership ties
+    # modelling specification
+    estimate = 'MPLE',
+    control = control.ergm(
+      main.method = 'MCMLE', # see Snijders & van Duijn (2002) regarding 'Robbins-Monro' method
+      MCMC.burnin = k,   # 'more is better' ... = v x 100,000
+      MCMC.interval = k, # 'more is better' ... = v x 100,000
+      MCMC.prop.weights = 'TNT', # faster convergence when paired with 'MPLE'
+      seed = 20110210 # to replicate ERGM
+    ),
+    verbose = TRUE # adjustment for low density adjacency graphs
+  )
+  print(summary(b))  # print results
+  print(confint(b, level = 0.95)) # 95% range
+  return(b) # return ergm object
+}
+r_adj <- LRQAP()
+
+
+

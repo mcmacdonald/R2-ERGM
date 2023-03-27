@@ -14,15 +14,15 @@ montagna # print
 
   # criminal organization membership
   table(montagna$family)
-  # merge "purple" and "green"... unclear, but seems to be what Breuer & Varese (2022) did
+  # merge "purple" and "green"... this step seems to be what Breuer & Varese (2022) did
   # see Breuer, N., & Varese, F. (2022). The Structure of Trade-type and Governance-type Organized Crime Groups: A Network Study. The British Journal of Criminology.
   
   # don't run
-  # montagna$family[montagna$family == ""]          <- "1_none"
+  # montagna$family[montagna$family == ""]          <- "1_none"      # no mafia membership
   # montagna$family[montagna$family == "batanesi"]  <- "2_batanesi"
   # montagna$family[montagna$family == "mistretta"] <- "3_mistretta"
-  # montagna$family[montagna$family == "green" ]    <- "4_verde"
-  # montagna$family[montagna$family == "purple"]    <- "5_viola"
+  # montagna$family[montagna$family == "green" ]    <- "4_verde"     # 'verde' is green in Italian
+  # montagna$family[montagna$family == "purple"]    <- "5_viola"     # 'viola' is purple in Italian
   
   # recode levels of criminal organization membership
   montagna$family[montagna$family == ""]          <- "1_none"        # no mafia membership
@@ -33,8 +33,8 @@ montagna # print
   
   # rank or title inside the mafia
   table(montagna$rank)
-  # merge boss and solder ... Breuer & Varese (2022) seem to merge associate and soldier ...
-  # ... I code mafia members and non-members instead
+  # merge boss and soldier ... Breuer & Varese (2022) seem to merge associate and soldier into one category ...
+  # ... but I code mafia members and non-members instead
   
   # don't run
   # montagna$rank[montagna$rank == ""]        <- "1_associate"
@@ -42,9 +42,9 @@ montagna # print
   # montagna$rank[montagna$rank == "boss"]    <- "3_boss"
   
   # recode levles of rank inside the mafia
-  montagna$rank[montagna$rank == ""]        <- "1_associate" # no rank or title = associates (non-members)
-  montagna$rank[montagna$rank == "soldier"] <- "2_mafia"     # belong to mafia-type organization
-  montagna$rank[montagna$rank == "boss"]    <- "2_mafia"     # belong to mafia-type organization 
+  montagna$rank[montagna$rank == ""]        <- "1_associate" # no mafia rank or title = associates (non-members)
+  montagna$rank[montagna$rank == "soldier"] <- "2_mafia"     # membership in mafia-type organization
+  montagna$rank[montagna$rank == "boss"]    <- "2_mafia"     # membership in mafia-type organization 
   
 
 
@@ -54,13 +54,13 @@ meets <- utils::read.csv("https://raw.githubusercontent.com/mcmacdonald/R2-ERGM/
 
 # vertex list
 v <- function(v){
-  v <- v[, 1:2]
-  v <- stack(v)
-  v <- dplyr::select(v, values)
-  v$values <- sort(v$values)
-  v <- dplyr::rename(v, node = values)
-  v <- unique(v)
-  return(v)
+  v <- v[, 1:2] # select columns
+  v <- stack(v) # stack the vertex IDs
+  v <- dplyr::select(v, values) # select IDs
+  v$values <- sort(v$values)    # sort IDs 
+  v <- dplyr::rename(v, node = values) # rename column
+  v <- unique(v) # drop duplicates
+  return(v) # return vertex list
 }
 v_meets <- v(meets)
 v_phone <- v(phone)
@@ -84,7 +84,7 @@ graph <- function(m, v){ # create statnet objects
   # ... v = vertex list
   g <- igraph::graph_from_data_frame(m, directed = FALSE, v = v)
   g <- igraph::simplify(g, remove.multiple = TRUE, remove.loops = TRUE) # remove edgeweights, loops, etc.
-  g <- intergraph::asNetwork(g)
+  g <- intergraph::asNetwork(g) # statnet object
   return(g)
 }
 phone <- graph(m = phone, v = v)
@@ -134,7 +134,7 @@ mat <- function(m, v){
   
   # igraph object
   g = igraph::graph_from_data_frame(d = m, directed = FALSE, v = v)
-  # simplify the graph - remove possible loops, or edge weights
+  # ensure the graph is binary... remove possible loops, edge weights, etc. in the graph
   g = igraph::simplify(graph = g, remove.loops = TRUE, remove.multiple = TRUE)
   # print graph dimensions
   n <- igraph::vcount(g)

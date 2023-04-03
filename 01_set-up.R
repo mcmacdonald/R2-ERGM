@@ -171,7 +171,7 @@ mat <- function(m, v){
   g <- intergraph::asNetwork(g) # statnet object
   return(g) # return graph
 }
-mafia   = mat(m = mafia, v = v)
+mafias   = mat(m = mafias, v = v)
 
 
 

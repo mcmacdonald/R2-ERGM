@@ -1,7 +1,6 @@
 
 
-
-# this .r script creates adjacency graphs that represent phone calls, meetings, and mafia membership
+# this .r script creates adjacency graphs that represent phone calls, meetings, mafia membership, and kinship relations
 
 
 
@@ -13,60 +12,53 @@ montagna # print
 # recode levels of attributes ... 
 
   # criminal organization membership
-  table(montagna$family)
-  # merge "purple" and "green"... this step seems to be what Breuer & Varese (2022) did
-  # see Breuer, N., & Varese, F. (2022). The Structure of Trade-type and Governance-type Organized Crime Groups: A Network Study. The British Journal of Criminology.
-  
-  # don't run
-  # montagna$family[montagna$family == ""]          <- "1_none"      # no mafia membership
-  # montagna$family[montagna$family == "batanesi"]  <- "2_batanesi"
-  # montagna$family[montagna$family == "mistretta"] <- "3_mistretta"
-  # montagna$family[montagna$family == "green" ]    <- "4_verde"     # 'verde' is green in Italian
-  # montagna$family[montagna$family == "purple"]    <- "5_viola"     # 'viola' is purple in Italian
+  table(montagna$familia)
   
   # recode levels of criminal organization membership
-  montagna$family[montagna$family == ""]          <- "1_none"        # no mafia membership
-  montagna$family[montagna$family == "batanesi"]  <- "2_batanesi"
-  montagna$family[montagna$family == "mistretta"] <- "3_mistretta"
-  montagna$family[montagna$family == "green"]     <- "4_sconosciuto" # sconosciuto means 'unknown' in Italian
-  montagna$family[montagna$family == "purple"]    <- "4_sconosciuto" # sconosciuto means 'unknown' in Italian
+  montagna$familia[montagna$familia == ""]                          <- "01_none"        # no mafia membership
+  montagna$familia[montagna$familia == "barcellona pozzo di gotto"] <- "02_barcellona"
+  montagna$familia[montagna$familia == "batanesi"]                  <- "03_batanesi"
+  montagna$familia[montagna$familia == "brancaccio"]                <- "04_brancaccio"
+  montagna$familia[montagna$familia == "caltagirone"]               <- "05_caltagirone"
+  montagna$familia[montagna$familia == "mazzaroti"]                 <- "06_mazzaroti"
+  montagna$familia[montagna$familia == "mistretta"]                 <- "07_mistretta"
+  montagna$familia[montagna$familia == "san mauro castelverde"]     <- "08_castelverde"
+  montagna$familia[montagna$familia == "tortorici"]                 <- "09_tortorici"
+  montagna$familia[montagna$familia == "-77"]                       <- "10_sconosciuto" # sconosciuto means 'unknown' in Italian
   
   # rank or title inside the mafia
-  table(montagna$rank)
-  # merge boss and soldier ... Breuer & Varese (2022) seem to merge associate and soldier into one category ...
-  # ... but I code mafia members and non-members instead
-  
-  # don't run
-  # montagna$rank[montagna$rank == ""]        <- "1_associate"
-  # montagna$rank[montagna$rank == "soldier"] <- "2_soldier"
-  # montagna$rank[montagna$rank == "boss"]    <- "3_boss"
+  table(montagna$title)
   
   # recode levles of rank inside the mafia
-  montagna$rank[montagna$rank == ""]        <- "1_associate" # no mafia rank or title = associates (non-members)
-  montagna$rank[montagna$rank == "soldier"] <- "2_mafia"     # membership in mafia-type organization
-  montagna$rank[montagna$rank == "boss"]    <- "2_mafia"     # membership in mafia-type organization 
+  montagna$title[montagna$title == ""]          <- "01_none" # no rank or title = associates (non-members)
+  montagna$title[montagna$title == "soldier"]   <- "02_soldier" # soldier in the mafia-type organization
+  montagna$title[montagna$title == "boss"]      <- "03_capo"    # capo or boss mafia-type organization 
+  montagna$title[montagna$title == "executive"] <- "03_capo"    # capo or boss mafia-type organization 
+  montagna$title[montagna$title == "underboss"] <- "03_capo"    # capop or boss mafia-type organization 
+
   
 
-
 # import edges -----------------------------------------------------------------
-phone <- utils::read.csv("https://raw.githubusercontent.com/mcmacdonald/R2-ERGM/main/montagna_phone.csv")    # phone calls by wire taps
-meets <- utils::read.csv("https://raw.githubusercontent.com/mcmacdonald/R2-ERGM/main/montagna_meetings.csv") # mafia summits or meeting co-attendance
+phones <- utils::read.csv("https://raw.githubusercontent.com/mcmacdonald/R2-ERGM/main/montagna_phone.csv")     # phone calls by wire taps
+summit <- utils::read.csv("https://raw.githubusercontent.com/mcmacdonald/R2-ERGM/main/montagna_meetings.csv")  # mafia summits or meeting co-attendance
+family <- utils::read.csv("https://raw.githubusercontent.com/mcmacdonald/R2-ERGM/main/montagna_kinship.csv")   # kinship relations 
+sights <- utils::read.csv("https://raw.githubusercontent.com/mcmacdonald/R2-ERGM/main/montagna_sightings.csv") # sightings during surveillance 
 
 # vertex list
 v <- function(v){
-  v <- v[, 1:2] # select columns
-  v <- stack(v) # stack the vertex IDs
-  v <- dplyr::select(v, values) # select IDs
-  v$values <- sort(v$values)    # sort IDs 
-  v <- dplyr::rename(v, node = values) # rename column
-  v <- unique(v) # drop duplicates
-  return(v) # return vertex list
+  v <- v[, 1:2]
+  v <- stack(v)
+  v <- dplyr::select(v, values)
+  v$values <- sort(v$values)
+  v <- dplyr::rename(v, node = values)
+  v <- unique(v)
+  return(v)
 }
-v_meets <- v(meets)
-v_phone <- v(phone)
+v_phones <- v(phones)
+v_summit <- v(summit)
 
 # complete vertex list i.e., all mafioso that police detect through surveillance
-v <- rbind(v_meets, v_phone); v <- unique(v)
+v <- rbind(v_phones, v_summit); v <- unique(v)
 
 # drop isolates in attributes
 dataset <- function(x, v){
@@ -78,37 +70,72 @@ montagna <- dataset(x = montagna, v = v)
 
 
 # graph objects ----------------------------------------------------------------
-graph <- function(m, v){ # create statnet objects
+
+# the mafia summit co-participation or meetings is weighted, but simple ergms do ...
+# ... not handle multilayer graphs, so create graph that indicates suspects that ...
+# ... meet more than once
+summit <- igraph::graph_from_data_frame(summit, directed = FALSE, v = v)
+summit <- igraph::get.adjacency(summit, type = "both")
+summit <- as.matrix(summit)
+
+# multiple summits
+summit_m <- summit
+summit_m[summit_m == 1] <- 0 # code single summit co-participation = 0
+summit_m[summit_m == 2] <- 1 # code dual summit co-participation = 1
+# dual <- igraph::graph_from_adjacency_matrix(dual, mode = "undirected", diag = FALSE, add.colnames = TRUE, add.rownames = TRUE)
+
+# single summits
+summit[summit == 2] <- 0 # code multiple summit co-participation = 0
+
+# function to generate directed graphs
+digraph <- function(m, v){ # create statnet objects
+  # inputs:
+  # ... m = edgelist
+  # ... v = vertex list
+  g <- igraph::graph_from_data_frame(m, directed = TRUE, v = v)
+# g <- igraph::simplify(g, remove.multiple = TRUE, remove.loops = TRUE) # remove edgeweights, loops, etc.
+  g <- intergraph::asNetwork(g)
+  return(g)
+}
+phones <- digraph(m = phones, v = v)
+
+# function to generate undirected graphs
+bigraph <- function(m, v){ # create statnet objects
   # inputs:
   # ... m = edgelist
   # ... v = vertex list
   g <- igraph::graph_from_data_frame(m, directed = FALSE, v = v)
   g <- igraph::simplify(g, remove.multiple = TRUE, remove.loops = TRUE) # remove edgeweights, loops, etc.
-  g <- intergraph::asNetwork(g) # statnet object
+  g <- intergraph::asNetwork(g)
   return(g)
 }
-phone <- graph(m = phone, v = v)
-meets <- graph(m = meets, v = v)
+family <- bigraph(m = family, v = v)
+sights <- bigraph(m = sights, v = v)
+
+
 
 # load attributes onto phone-tap graph
 require(statnet)
-phone %v% 'mob'   <- montagna$family
-phone %v% 'title' <- montagna$rank
+phones %v% 'mafia'     <- montagna$familia
+phones %v% 'title'     <- montagna$title
+phones %v% 'padrino'   <- montagna$padrino
+phones %v% 'arrest'    <- montagna$arrest
+phones %v% 'informant' <- montagna$informant
 
 # ... mob membership bipartite graph
-mobs <- dplyr::select(montagna, family, node) # mob membership bipartite
+mafias <- dplyr::select(montagna, familia, node) # mob membership bipartite
 
 # I use the gambit of group strategy to operationalize mafia membership ...
 # ... i.e., do mobsters belong the same criminal organization?
 bipartiate <- function(m){ # bipartite projection
   
-  # transfrom two-mode EDGELIST into graph object
+  # project bipartite edgelist into graph object
   g = igraph::graph_from_data_frame(d = m, directed = FALSE)
   cat("\n ... bipartite graph? ")
   cat(igraph::is.bipartite(g)) # check bipartite graph: Should read FALSE
   cat("\n")
   
-  # coerce to bipartite graph
+  # coerce into bipartite graph
   igraph::V(g)$type <- igraph::V(g)$name %in% m[, 1] # assign 'type' ...
   # ... bipartite graphs have 'types' i.e., mafia membership ties
   cat("\n ... bipartite graph? ")
@@ -117,12 +144,12 @@ bipartiate <- function(m){ # bipartite projection
   # bipartite projection
   g = igraph::bipartite.projection(graph = g, igraph::V(g)$type, multiplicity = TRUE) # multiplicity counts edges
   
-  # return one-mode EDGELIST from the two-mode projection
+  # return unipartite edgelist
   g = igraph::get.data.frame(g$proj1) # or get.adjacency() ...
   g = dplyr::rename(g, i = from, j = to) # rename columns i,j
   return(g)
 } 
-mobs <- bipartiate(m = mobs)
+mafias <- bipartiate(m = mafias)
 
 
 
@@ -134,7 +161,7 @@ mat <- function(m, v){
   
   # igraph object
   g = igraph::graph_from_data_frame(d = m, directed = FALSE, v = v)
-  # ensure the graph is binary... remove possible loops, edge weights, etc. in the graph
+  # simplify the graph - remove possible loops, or edge weights
   g = igraph::simplify(graph = g, remove.loops = TRUE, remove.multiple = TRUE)
   # print graph dimensions
   n <- igraph::vcount(g)
@@ -144,8 +171,20 @@ mat <- function(m, v){
   g <- intergraph::asNetwork(g) # statnet object
   return(g) # return graph
 }
-mobs   = mat(m = mobs, v = v)
+mafia   = mat(m = mafia, v = v)
 
 
 
-# ... close .r script
+# close .r script --------------------------------------------------------------
+
+
+
+# ... this code outputs the attribute data for the nodes in the different data sources that I use to create the graph illustrations
+
+# don't run
+
+# attributes for nodes only in the phone tap records or the surveillance records on summit participation 
+# attributes <- merge(montagna, v_phones, by = "node", all.x = FALSE, all.y = TRUE)
+# attributes <- merge(montagna, v_summit, by = "node", all.x = FALSE, all.y = TRUE)
+
+

@@ -3,15 +3,16 @@
 
 # syntax to calculate pseduo R-squared measures --------------------------------
 
-# ... this .r script calculates three pseduo r-squared statistics:
+# ... this .r script calculates different types of pseduo r-squared statistics:
 # ... 1) Efron's r-squared
 # ... 2) McFadden's r-squared
 # ... 3) Tjur's r-squared
+# ... 4) Snidjer & Bosker's r-squared, called the "total variance" method
 
 # the choice of the three r-squared measures is strategic:
 # ... 1) Efron's r-squared is most similar to R-squared in ordinary least squares; and 
 # ... 2) Paul Allison demonstrates McFadden's and Tjur's r-squared statictics > other pseduo r-squared measures;*
-# ... 3) the three measures sufficiently differ in their procedures to calculate r-squared
+# ... 3) the different measures sufficiently differ in their procedures to calculate r-squared
 
 # ... * see Paul Allison's comparison of pseudo R-squared measures: https://statisticalhorizons.com/r2logistic/
 
@@ -132,8 +133,8 @@ Tjur <- function(g, update, adjust){
   pp_adjust <- merge(x = pp_adjust, y = ij, by.x = c("i", "j"), by.y = c("i", "j"), all.x = TRUE, all.y = TRUE)
   pp_adjust[is.na(pp_adjust)] <- 0 # set non-dyads = 0
   # calculate r-squared adjustment
-  y_1  <- exp(mean(log(pp_adjust$p[pp_adjust$n == 1]))) # geometric means
-  y_0  <- exp(mean(log(pp_adjust$p[pp_adjust$n == 0]))) # geometric means
+  y_1  <- exp(mean(log(pp_adjust$p[pp_adjust$n == 1]))) # geometric mean
+  y_0  <- exp(mean(log(pp_adjust$p[pp_adjust$n == 0]))) # geometric mean
   r.dx <- abs(y_0 - y_1)
   r.dx <- r.sq - r.dx # "adjusted" r.squared
   # print adjustment
@@ -144,7 +145,7 @@ Tjur(g = phones, update = ergm_01, adjust = adj)
 
 
 
-# Snidjer & Bosker's R-squared -------------------------------------------------
+# Snidjer & Bosker's r-squared -------------------------------------------------
 # called the "total variance" method, used to calculate r-squared in multi-level regression
 # I adjust the measure to calculate total variance, irrespective of clusters or level-1 or level-2 predictors
 variance <- function(g, null, update, adjust){ # "total variance"
@@ -237,10 +238,13 @@ variance(g = phones, null = ergm_00, update = ergm_01, adjust = adj)
 
 
 
+# close .r script
 
 
 
-# APPENDIX ---------------------------------------------------------------------
+
+
+# APPENDIX OF CODE TO CALCULATE OTHER PSUEDO R-SQUARED MEASURES
 
 # cohen's r-squared ------------------------------------------------------------
 cohen <- function(null, update, adjust){
@@ -261,21 +265,25 @@ cohen <- function(null, update, adjust){
   cat("\n Cohen's R-squared, adjustment: "); cat(r.dx); cat("\n")
   cat("\n ... the adjustment is the proportion of error reduction explained by the predictors, independent of the endogenous graph properties.")
 }
-cohen(null = ergm_00, update = ergm_02, adjust = adj)
+cohen(null = ergm_00, update = ergm_01, adjust = adj)
 
 
 
 
 
 # cox-snell r-squared ----------------------------------------------------------
-coxsnell <- function(null, update, adjust){
+coxsnell <- function(g, null, update, adjust){
   # inputs:
   # ... null = null log likelihood statistic (isolate-adjusted)
   # ... update = updated log likelihood statistic
   # ... adjust = adjustment to pseudo r-squared
   
   # cox-snell r-squared
-  k <- -(2/
+  m <- network::network.edgecount(g) # retrieve the number of edges/arcs in the graph
+  k <- -(2/m) # calculate the adjustment to the difference in the log likelihood statistic of the predicted model and the null log likelihood
+  # notes on the calculation of the parameter 'k':
+  # the command 'network::network.dyadcount(g)' calculates all possible dyads, not the number edges
+  # the command 'network::network.size(g)' weights r-squared by the number of nodes in the graph rather than the number of edges
   r.sq <- 1 - exp( k * (stats::logLik(update)[1] - stats::logLik(null)[1]) )
   cat("\n Cox-Snell R-squared: "); cat(r.sq); cat("\n")
   
@@ -285,30 +293,6 @@ coxsnell <- function(null, update, adjust){
   cat("\n Cox-Snell's R-squared, adjustment: "); cat(r.dx); cat("\n")
   cat("\n ... the adjustment is the proportion of error reduction explained by the predictors, independent of the endogenous graph properties.")
 }
-coxsnell(null = ergm_00, update = ergm_02, adjust = adj)
-
-
-
-# function to calculate Cox-Snell
-cox.snell <- function(g, n, m){
-  ll_0 <- -2 * stats::logLik(n)    # null log-likelihood
-  ll_1 <- -2 * stats::logLik(m)    # adjusted log-likelihood
-  
-  # use the number of nodes to calculate the exponent k
-  n <- network::network.size(g)
-  k    <- 2/n
-  R2 = 1 - ((ll_1[1]/ll_0[1])^k)
-  message("Cox-Snell r-squared, according to the number of nodes in the graph:")
-  cat(R2); cat("\n"); cat("\n")
-  
-  # use the number of edges/arcs to calculate the exponent k  
-  m <- network::network.edgecount(g) # the command 'network::network.dyadcount(g)' calculates all possible dyads 
-  k    <- 2/m
-  R2 = 1 - ((ll_1[1]/ll_0[1])^k)
-  message("Cox-Snell r-squared, accordin to the number of edges/arcs in the graph:")
-  print(R2)
-}
-cox.snell(g = phones, n = null_00, m = ergm_01)
-
+coxsnell(g = phones, null = ergm_00, update = ergm_01, adjust = adj)
 
 

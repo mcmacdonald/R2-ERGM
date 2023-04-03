@@ -29,7 +29,7 @@ montagna # print
   # rank or title inside the mafia
   table(montagna$title)
   
-  # recode levles of rank inside the mafia
+  # recode levels of rank inside the mafia
   montagna$title[montagna$title == ""]          <- "01_none" # no rank or title = associates (non-members)
   montagna$title[montagna$title == "soldier"]   <- "02_soldier" # soldier in the mafia-type organization
   montagna$title[montagna$title == "boss"]      <- "03_capo"    # capo or boss mafia-type organization 

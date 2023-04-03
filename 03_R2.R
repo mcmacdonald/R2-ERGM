@@ -9,13 +9,14 @@
 # ... 3) Tjur's r-squared
 # ... 4) Snidjer & Bosker's r-squared, called the "total variance" method
 
-# the choice of the three r-squared measures is strategic:
+# the choice of the different r-squared measures is strategic:
 # ... 1) Efron's r-squared is most similar to R-squared in ordinary least squares; and 
 # ... 2) Paul Allison demonstrates McFadden's and Tjur's r-squared statictics > other pseduo r-squared measures;*
 # ... 3) the different measures sufficiently differ in their procedures to calculate r-squared
 
 # ... * see Paul Allison's comparison of pseudo R-squared measures: https://statisticalhorizons.com/r2logistic/
 
+# I include supplementary code to calculate Cohen's r-squared and the Cox-Snell measure
 
 
 # Efron's R-squared ------------------------------------------------------------

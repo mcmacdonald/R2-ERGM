@@ -73,7 +73,7 @@ gof_bergm_02 <- GOF(bergm_02)
 
 
 
-
+# edits needed to code
 
 
 

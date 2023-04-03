@@ -239,9 +239,8 @@ lrqap <- function(){ # ... this code uses attributes to predicts edges, but does
     phone ~                               # predict graph-properties of phone taps
       edges                             + # graph density or intercept
       isolates                          + # control on isolates i.e., degree = 0
-      nodefactor('mafia', levels = - 1)   + # dummies that control on differences in mafia membership i.e., familia 
-      nodeifactor('title', levels = - 1)  + # in dgeree 
-      # nodeofactor('title', levels = - 1)+
+      nodefactor('mafia', levels = - 1)   + # dummies that control for differences in mafia membership, familia 
+      nodeifactor('title', levels = - 1)  + # dummies that control for differences in the receiver effects by the ranks or titles suspects occupy inside the mafia
       # nodematch('title', diff = TRUE)   + # the rank or title that suspects occupy in their mafia clan
       # nodemix('title', levels = -1)     +
       nodefactor('arrest', levels = -1)   + # spotlight bias on arrest, where reference = no arrest
@@ -267,8 +266,5 @@ lrqap <- function(){ # ... this code uses attributes to predicts edges, but does
   return(b) # return ergm object
 }
 nogw_00 <- lrqap()
-
-
-
 
 

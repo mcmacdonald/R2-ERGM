@@ -16,7 +16,7 @@ null <- function(){ # ... this code provides null estimates used to calculate r-
   n <- nrow(v)     # vertex count
   k <- n * 100000  # 100,000 iterations per vertex
   b <- ergm::ergm( # equation
-    phone ~  # predict graph properties of phone calls
+    phones ~ # predict graph properties of phone calls
       edges, # graph density i.e., equivalent to the intercept 
     # model specification
     estimate = 'MPLE',
@@ -65,7 +65,7 @@ adjustment_isolate <- function(){ # ... this code provides isolate-adjusted esti
   n <- nrow(v)     # vertex count
   k <- n * 100000  # 100,000 iterations per vertex
   b <- ergm::ergm( # equation
-    phone ~      # predict graph properties of phone calls
+    phones ~     # predict graph properties of phone calls
       edges    + # graph density i.e., equivalent to the intercept 
       isolates , # control on isolates i.e., degree = 0
     # model specification
@@ -95,7 +95,7 @@ update <- function(x){ # ... this code provides the updated estimates used to ca
   k <- n * 100000  # 100,000 iterations per vertex
   x <- x * 1       # degree decay parameter
   b <- ergm::ergm( # equation
-      phone ~                             # predict graph-properties of phone taps
+      phones ~                              # predict graph-properties of phone taps
       edges                               + # graph density that estimates the number of arcs proportionate to all possible arcs (equivalent to intercept)
       isolates                            + # control on isolates i.e., degree = 0
       # the next set of terms in the equation represent the parameters to recreate the graph structure
@@ -198,7 +198,7 @@ adjustment_ergm <- function(){ # ... this code provides the adjustments used to 
   n <- nrow(v)     # vertex
   k <- n * 100000  # 100,000 iterations per vertex
   b <- ergm::ergm( # equation
-    phone ~                               # predict contacts per phone taps
+    phones ~                                # predict contacts per phone taps
       edges                               + # graph density or intercept 
       isolates                            + # control on isolates i.e., degree = 0
       mutual                              + # control on the reciprocity of arcs i.e., if i phones j, does j phone i?
@@ -236,7 +236,7 @@ lrqap <- function(){ # ... this code uses attributes to predicts edges, but does
   n <- nrow(v)     # vertex
   k <- n * 100000  # 100,000 iterations per vertex
   b <- ergm::ergm( # equation
-    phone ~                               # predict graph-properties of phone taps
+    phones ~                              # predict graph-properties of phone taps
       edges                             + # graph density or intercept
       isolates                          + # control on isolates i.e., degree = 0
       nodefactor('mafia', levels = - 1)   + # dummies that control for differences in mafia membership, familia 

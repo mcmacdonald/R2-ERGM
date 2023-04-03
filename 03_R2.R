@@ -16,7 +16,10 @@
 
 # ... * see Paul Allison's comparison of pseudo R-squared measures: https://statisticalhorizons.com/r2logistic/
 
-# I include supplementary code to calculate Cohen's r-squared and the Cox-Snell measure
+# Furthermore, the end of this script includes supplementary code to calculate other common pseudo r-squared measures not in the paper:
+# ... Cohen's r-squared
+# ... Cox-Snell r-squared
+
 
 
 # Efron's R-squared ------------------------------------------------------------
